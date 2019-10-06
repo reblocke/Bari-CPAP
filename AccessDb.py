@@ -125,32 +125,32 @@ def process_Outcomes_Db(Patients, outcomes_sheet):
 
 def test_db_gen():
     db = RecordsDb()
-    patient1 = PatientRecord("1243")
-    patient1.setAHI("41", "12/19/19")
+    patient1 = PatientRecord(1243)
+    patient1.setAHI(41.0, "12/19/19")
     record1 = complianceReport("12/21/19", 90, 50)
     record2 = complianceReport("12/21/18", 30, 100)
     patient1.addComplianceRecord(record1)
     patient1.addComplianceRecord(record2)
-    patient1.setHeight(185)
-    patient1.setWeights([150, 140, 140, 140, 130, 140, 145, None, 160])
+    patient1.setHeight(185.0)
+    patient1.setWeights([150.0, 140.0, 140.0, 140.0, 130.0, 140.0, 145.0, None, 160.0])
     # [DOS, +2mo, +4mo, +6mo, +1y, +2y, +3y, +4y, +5y]
     print(patient1.BMIDOS())
     db.addPatient(patient1)
 
-    patient2 = PatientRecord("1244")
-    patient2.setAHI("40", "12/19/20")
+    patient2 = PatientRecord(1244)
+    patient2.setAHI(40.0, "12/19/20")
     record3 = complianceReport("12/21/19", 90, 45)
     record4 = complianceReport("12/21/18", 30, 0)
     patient2.addComplianceRecord(record3)
     patient2.addComplianceRecord(record4)
-    patient2.setHeight(150)
-    patient2.setWeights([130, 135, 140, 140, 130, 140, 145, 155, None])
+    patient2.setHeight(150.0)
+    patient2.setWeights([130.0, 135.0, 140.0, 140.0, 130.0, 140.0, 145.0, 155.0, None])
     db.addPatient(patient2)
 
-    patient3 = PatientRecord("1245")
+    patient3 = PatientRecord(1245)
     patient3.setAHI(None, None)
-    patient3.setHeight(190)
-    patient3.setWeights([100, None, None, None, None, None, None, None, None])
+    patient3.setHeight(190.0)
+    patient3.setWeights([100.0, None, None, None, None, None, None, None, None])
     db.addPatient(patient3)
 
     print("----")
@@ -161,7 +161,7 @@ def test_db_gen():
 
 
 def main():
-    # 1 for testing, 0 to run
+    # 0 for testing, 1 to run
     testing_mode = 1
 
     if testing_mode == 0:
@@ -194,7 +194,7 @@ def main():
     print("\nWeight Regain Observed (Kg):")
     print(database.WeightRegainList().describe())
 
-    df = database.dataFrameExport()
+    df = database.createDataFrame()
 
 
 if __name__ == '__main__':

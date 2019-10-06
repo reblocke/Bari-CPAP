@@ -64,7 +64,7 @@ class RecordsDb:
             Weights.append(record.weightRegain())
         return pd.Series(Weights)
 
-    def dataFrameExport(self):
+    def createDataFrame(self):
         """Exports the data contained in db as a Pandas data frame in the
         following format:
         MRN = index
@@ -75,11 +75,22 @@ class RecordsDb:
         Diag AHI
         Avg CPAP Compliance
         """
-        data = dict()
+
+        index = list()
+        weight_regain = list()
+        max_wt_loss = list()
+        BMI_DOS = list()
+        pt_diag_AHI = list()
+        pt_avg_comp = list()
         for patient in self.PatientArray:
-            factors = [patient.weightRegain(), patient.maxWeightLoss(), patient.BMIDOS(), patient.Diag_AHI, patient.avgCompliance()]
-            data.update(patient.MRN, factors)
-        return pd.DataFrame(data)
+            index.append(patient.MRN)
+            weight_regain.append(patient.weightRegain())
+            max_wt_loss.append(patient.maxWeightLoss())
+            BMI_DOS.append(patient.BMIDOS())
+            pt_diag_AHI.append(patient.Diag_AHI)
+            pt_avg_comp.append(patient.avgCompliance())
+
+        return pd.DataFrame({'mrn': index, 'wrg':weight_regain, 'mwl':max_wt_loss, 'bmi':BMI_DOS, 'dAHI':pt_diag_AHI, 'pac':pt_avg_comp})
 
     def printDb(self):
         for record in self.PatientArray:
