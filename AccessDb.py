@@ -26,40 +26,47 @@ def create_patient_db(compliance_sheet, outcomes_sheet):
 
 def process_Adherence_db(Patients, compliance_sheet):
     """takes patient db and fills it with info based on compliance sheet"""
-    MRN_Column = "A"
-    Diag_AHI_Column = "Q"
-    Diag_AHI_Date_Column = "S"
-    Percent_Days_4_Hours_Column = "F"
-    Num_Days_Reported_Column = "G"
-    Download_Date_Column = "B"
-    i = 2  # The row the data starts on
+    MRN_Column = 0  # "A"
+    Diag_AHI_Column = 16  # "Q"
+    Diag_AHI_Date_Column = 18 # "S"
+    Percent_Days_4_Hours_Column = 5  # "F"
+    Num_Days_Reported_Column = 6  # "G"
+    Download_Date_Column = 1  # bug"B"
+    i = 1
 
     print("Processing Adherence")
 
-    while compliance_sheet["A"+str(i)].value is not None:
-        # For each row that has an MRN entry...
-        row_mrn = int(compliance_sheet[MRN_Column + str(i)].value)
+    compliance_iter = compliance_sheet.iter_rows()
+    next(compliance_iter)  # skip first row
+    for patient_row in compliance_iter:
         try:
-            row_ahi = float(compliance_sheet[Diag_AHI_Column+str(i)].value)
+            row_mrn = int(patient_row[MRN_Column].value)
+        except (ValueError, TypeError):
+            row_mrn = None
+        try:
+            row_ahi = float(patient_row[Diag_AHI_Column].value)
         except (ValueError, TypeError):
             row_ahi = None
-        row_ahi_date = compliance_sheet[Diag_AHI_Date_Column+str(i)].value
-
         try:
-            percent_days_4_hours = float(compliance_sheet[Percent_Days_4_Hours_Column+str(i)].value)
+            row_ahi_date = patient_row[Diag_AHI_Date_Column].value
+        except (ValueError, TypeError):
+            row_ahi_date = None
+        try:
+            percent_days_4_hours = float(patient_row[Percent_Days_4_Hours_Column].value)
         except (ValueError, TypeError):
             percent_days_4_hours = None
-
         try:
-            num_days_reported = int(compliance_sheet[Num_Days_Reported_Column+str(i)].value)
+            num_days_reported = int(patient_row[Num_Days_Reported_Column].value)
         except (ValueError, TypeError):
             num_days_reported = None
-
-        download_date = compliance_sheet[Download_Date_Column+str(i)].value
+        try:
+            download_date = patient_row[Download_Date_Column].value
+        except (ValueError, TypeError):
+            download_date = None
 
         row_compliance = complianceReport(download_date, num_days_reported, percent_days_4_hours)
 
-        print("Processing adherence record number " + str(i-1))
+        # print("Processing adherence record number " + str(i-1))
         Patient = Patients.findPatient(row_mrn)
         if Patient is None:
             # Patient is not already in list
@@ -73,38 +80,41 @@ def process_Adherence_db(Patients, compliance_sheet):
 
 def process_Outcomes_Db(Patients, outcomes_sheet):
     """takes patient db and fills it based on outcomes excel spreadsheet"""
-    MRN_Column = "A"
-    Bari_Surg_Date_Column = "B"
-    Height_DOS_Column = "C"
-    Weight_DOS_Column = "L"
-    Weight_2mo_Column = "M"
-    Weight_4mo_Column = "N"
-    Weight_6mo_Column = "O"
-    Weight_1y_Column = "P"
-    Weight_2y_Column = "Q"
-    Weight_3y_Column = "R"
-    Weight_4y_Column = "S"
-    Weight_5y_Column = "T"
+    MRN_Column = 0  # "A"
+    Bari_Surg_Date_Column = 1  # "B"
+    Height_DOS_Column = 2   # "C"
+    Weight_DOS_Column = 11  # "L"
+    Weight_2mo_Column = 12  # "M"
+    Weight_4mo_Column = 13  # "N"
+    Weight_6mo_Column = 14  # "O"
+    Weight_1y_Column = 15  # "P"
+    Weight_2y_Column = 16  # "Q"
+    Weight_3y_Column = 17  # "R"
+    Weight_4y_Column = 18  # "S"
+    Weight_5y_Column = 19  # "T"
 
     weightOrder = [Weight_DOS_Column, Weight_2mo_Column, Weight_4mo_Column, Weight_6mo_Column, Weight_1y_Column, Weight_2y_Column, Weight_3y_Column, Weight_4y_Column, Weight_5y_Column]
 
     print("Processing Outcomes")
-    i = 2  # The row the data starts on
+    i = 1  # The row the data starts on
 
-    while outcomes_sheet["A"+str(i)].value is not None:
+    outcomes_iter = outcomes_sheet.iter_rows()
+    next(outcomes_iter)  # skip 1st/labels
+    for patient_row in outcomes_iter:
         # For each row that has an MRN entry...
-        print("Processing outcome chart #" + str(i-1))
-        row_mrn = outcomes_sheet[MRN_Column + str(i)].value
-        row_bari_dos = outcomes_sheet[Bari_Surg_Date_Column+str(i)].value
+        # print("Processing chart #" + str(i))
+        row_mrn = patient_row[MRN_Column].value
+        row_bari_dos = patient_row[Bari_Surg_Date_Column].value
+
         try:
-            row_height_dos = float(outcomes_sheet[Height_DOS_Column+str(i)].value)
+            row_height_dos = float(patient_row[Height_DOS_Column].value)
         except(ValueError, TypeError):
             row_height_dos = None
 
-        row_weight = list() #order of appending is chronological
+        row_weight = list()  # order of appending is chronological
         for column in weightOrder:
             try:
-                row_weight.append(float(outcomes_sheet[column+str(i)].value))
+                row_weight.append(float(patient_row[column].value))
             except(ValueError, TypeError):
                 row_weight.append(None)
 
@@ -167,11 +177,11 @@ def main():
     if testing_mode == 0:
         database = test_db_gen()
     else:
-        outcomes_sheet = load_sheet(db_loc + outcome_db_loc, outcome_data_sheet_name)
         compliance_sheet = load_sheet(db_loc + compliance_db_loc, compliance_data_sheet_name)
+        outcomes_sheet = load_sheet(db_loc + outcome_db_loc, outcome_data_sheet_name)
         database = create_patient_db(compliance_sheet, outcomes_sheet)
 
-    database.printDb()
+    #database.printDb()
 
     # Summary Statistics:
 
@@ -195,6 +205,7 @@ def main():
     print(database.WeightRegainList().describe())
 
     df = database.createDataFrame()
+    # TODO: troubleshoot why more entries for weight regain?
 
 
 if __name__ == '__main__':
