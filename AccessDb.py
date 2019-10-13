@@ -2,7 +2,13 @@
 from openpyxl import load_workbook
 import pandas as pd
 from RecordsDb import *
-from datetime import datetime
+
+# Locations
+db_loc = "/Users/reblocke/Box/Residency Personal Files/Scholarly Work/Bariatric CPAP Project/Bariatric Clinic data/"
+compliance_db_loc = "BARI_SLEEP_CPAP_COMPLIANCE_092619.xlsx"
+outcome_db_loc = "BARI_SLEEP_031919 from EDW - edits.xlsx"
+compliance_data_sheet_name = "Sheet 1"
+outcome_data_sheet_name = "Sheet 1"
 
 def load_sheet(location, sheet_name):
     """loads the sheet excel doc and returns the compliance sheet"""
@@ -34,7 +40,6 @@ def process_Adherence_db(Patients, compliance_sheet):
     next(compliance_iter)  # skip first row
     for patient_row in compliance_iter:
         try:
-            # Uses real MRN to cross-index the two databases
             row_mrn = int(patient_row[MRN_Column].value)
         except (ValueError, TypeError):
             row_mrn = None
@@ -62,11 +67,10 @@ def process_Adherence_db(Patients, compliance_sheet):
         row_compliance = complianceReport(download_date, num_days_reported,
             percent_days_4_hours)
 
-        #print("Processing adherence record number " + str(i-1))
+        # print("Processing adherence record number " + str(i-1))
         Patient = Patients.findPatient(row_mrn)
         if Patient is None:
             # Patient is not already in list
-            print("Not already on list, adding")
             Patient = PatientRecord(row_mrn)
             Patients.addPatient(Patient)
         Patient.setAHI(row_ahi, row_ahi_date)
@@ -77,210 +81,60 @@ def process_Adherence_db(Patients, compliance_sheet):
 
 def process_Outcomes_Db(Patients, outcomes_sheet):
     """takes patient db and fills it based on outcomes excel spreadsheet"""
-    # TODO: add Sleep study flag? there should be 133 and 119 with use documented. - why different from adherence-based?
+    MRN_Column = 0  # "A"
+    Bari_Surg_Date_Column = 1  # "B"
+    Height_DOS_Column = 2   # "C"
+    Weight_DOS_Column = 11  # "L"
+    Weight_2mo_Column = 12  # "M"
+    Weight_4mo_Column = 13  # "N"
+    Weight_6mo_Column = 14  # "O"
+    Weight_1y_Column = 15  # "P"
+    Weight_2y_Column = 16  # "Q"
+    Weight_3y_Column = 17  # "R"
+    Weight_4y_Column = 18  # "S"
+    Weight_5y_Column = 19  # "T"
+
+    weightOrder = [Weight_DOS_Column, Weight_2mo_Column, Weight_4mo_Column,
+        Weight_6mo_Column, Weight_1y_Column, Weight_2y_Column, Weight_3y_Column,
+        Weight_4y_Column, Weight_5y_Column]
 
     print("Processing Outcomes")
-    outcomes_iter = outcomes_sheet.iter_rows()
-    title_row = next(outcomes_iter)  # skip 1st/labels for the iteration, save title row to generate label numbers.
-    # Generate the column numbers that correspond to each label so that each row can be accessed.
-    for i in range(len(title_row)):
-        if title_row[i].value == "PAT_ID":
-            MRN_Column = i
-        if title_row[i].value == "BARI_SURGERY_DATE":
-            Bari_Surg_Date_Column = i
-        if title_row[i].value == "HEIGHT_CM_DOS":
-            Height_DOS_Column = i
-        if title_row[i].value == "WEIGHT_KG_DOS":
-            Weight_DOS_Column = i
-        if title_row[i].value == "WEIGHT_KG_2_MONTH":
-            Weight_2mo_Column = i
-        if title_row[i].value == "WEIGHT_KG_4_MONTH":
-            Weight_4mo_Column = i
-        if title_row[i].value == "WEIGHT_KG_6_MONTH":
-            Weight_6mo_Column = i
-        if title_row[i].value == "WEIGHT_KG_1_YEAR":
-            Weight_1y_Column = i
-        if title_row[i].value == "WEIGHT_KG_2_YEAR":
-            Weight_2y_Column = i
-        if title_row[i].value == "WEIGHT_KG_3_YEAR":
-            Weight_3y_Column = i
-        if title_row[i].value == "WEIGHT_KG_4_YEAR":
-            Weight_4y_Column = i
-        if title_row[i].value == "WEIGHT_KG_5_YEAR":
-            Weight_5y_Column = i
-        if title_row[i].value == "Pre-op date":
-            pre_op_date_Column = i
-            # print("pre-op date column " + str(i))
-        if title_row[i].value == "HCO3 pre-op":
-            HCO3_pre_op_Column = i
-            # print("pre-op hco3 column " + str(i))
-        if title_row[i].value == "sCr pre-op":
-            sCr_pre_op_Column = i
-            # print("pre-op scr column " + str(i))
-        if title_row[i].value == "HCO3 before":   # note, this is actually day 1 - 14 post-op
-            HCO3_DOS_Column = i
-        if title_row[i].value == "HCO3 2 months":
-            HCO3_2mo_Column = i
-        if title_row[i].value == "HCO3 4 months":
-            HCO3_4mo_Column = i
-        if title_row[i].value == "HCO3 6 months":
-            HCO3_6mo_Column = i
-        if title_row[i].value == "HCO3 1 year":
-            HCO3_1y_Column = i
-        if title_row[i].value == "HCO3 2 year":
-            HCO3_2y_Column = i
-        if title_row[i].value == "HCO3 3 year":
-            HCO3_3y_Column = i
-        if title_row[i].value == "HCO3 4 year":
-            HCO3_4y_Column = i
-        if title_row[i].value == "HCO3 5 year":
-            HCO3_5y_Column = i
-        if title_row[i].value == "Sex":
-            sex_column = i
-        if title_row[i].value == "DOB":
-            dob_column = i
-        if title_row[i].value == "CCI_SCORE":
-            cci_column = i
-        if title_row[i].value == "Exlusion Loop":
-            loop_exclusion_column = i
-        if title_row[i].value == 'Exclusion Opiate':
-            opiate_exclusion_column = i
-        if title_row[i].value == 'Exclusion CA':
-            ca_exclusion_column = i
-        if title_row[i].value == 'Exclusion Other':
-            other_exclusion_column = i
-    try:
-        weightOrder = [Weight_DOS_Column, Weight_2mo_Column, Weight_4mo_Column,
-            Weight_6mo_Column, Weight_1y_Column, Weight_2y_Column, Weight_3y_Column,
-            Weight_4y_Column, Weight_5y_Column]
-        HCO3Order = [HCO3_pre_op_Column, HCO3_2mo_Column, HCO3_4mo_Column,
-            HCO3_6mo_Column, HCO3_1y_Column, HCO3_2y_Column, HCO3_3y_Column,
-            HCO3_4y_Column, HCO3_5y_Column] # Note: HCO3_DOS_Column removed
-    except(UnboundLocalError) as e:
-        print("Error: No column labels found for one or more of the needed columns")
-        print(e)
-        quit()
+    i = 1  # The row the data starts on
 
+    outcomes_iter = outcomes_sheet.iter_rows()
+    next(outcomes_iter)  # skip 1st/labels
     for patient_row in outcomes_iter:
         # For each row that has an MRN entry...
-        #print("Processing chart #" + str(i))
+        # print("Processing chart #" + str(i))
         try:
             row_mrn = int(patient_row[MRN_Column].value)
         except(ValueError, TypeError):
             row_mrn = None
-            print("Error!")
-
         row_bari_dos = patient_row[Bari_Surg_Date_Column].value
 
-        # Sex
-        try:
-            row_sex = str(patient_row[sex_column].value)
-        except(ValueError, TypeError):
-            row_sex = None
-
-        # DOB
-        try:
-            row_dob = patient_row[dob_column].value
-        except(ValueError, TypeError):
-            row_dob = None
-
-        # CCI
-        try:
-            row_cci = int(patient_row[cci_column].value)
-        except(ValueError, TypeError):
-            row_cci = None
-
-        # HEIGHT
         try:
             row_height_dos = float(patient_row[Height_DOS_Column].value)
         except(ValueError, TypeError):
             row_height_dos = None
 
-        # WEIGHT
-        row_weight = list()  # list of weights; order of appending is chronological
+        row_weight = list()  # order of appending is chronological
         for column in weightOrder:
             try:
                 row_weight.append(float(patient_row[column].value))
             except(ValueError, TypeError):
                 row_weight.append(None)
 
-        # BICARBONATE
-        row_HCO3 = list()  # list of weights; order of appending is chronological
-        for column in HCO3Order:
-            try:
-                row_HCO3.append(float(patient_row[column].value))
-            except(ValueError, TypeError):
-                row_HCO3.append(None)
-        #print(row_HCO3)
-
-        # PREOP DATE AND CREATININE
-        try:
-            row_date_preop = patient_row[pre_op_date_Column].value
-        except(ValueError, TypeError):
-            row_date_preop = None
-        try:
-            row_creat_preop = float(patient_row[sCr_pre_op_Column].value)
-        except(ValueError, TypeError):
-            row_creat_preop = None
-
-        # EXCLUSIONS
-        try:
-            loop_exclusion = str(patient_row[loop_exclusion_column].value)
-        except(ValueError, TypeError):
-            loop_exclusion = None
-        try:
-            opiate_exclusion = str(patient_row[opiate_exclusion_column].value)
-        except(ValueError, TypeError):
-            opiate_exclusion = None
-        try:
-            ca_exclusion = str(patient_row[ca_exclusion_column].value)
-        except(ValueError, TypeError):
-            ca_exclusion = None
-        try:
-            other_exclusion = str(patient_row[other_exclusion_column].value)
-        except(ValueError, TypeError):
-            other_exclusion = None
-
-        # HCO3 AT SURGERY
-        # TODO this - low priority as it doesn't seem like there is much data to be gleaned from this
-
-        # End of line-by-line processing
-        # either add to an existing patient or create a new patient with indexed information.
-        # Start of patient object creation and addition to list
         Patient = Patients.findPatient(row_mrn)
         if Patient is None:
             # Patient is not already in list
-            #print("Adding patient MRN: " + str(row_mrn))
             Patient = PatientRecord(row_mrn)
             Patients.addPatient(Patient)
-
-        if row_cci is not None:
-            Patient.setCCI(row_cci)
-        if row_dob is not None:
-            Patient.setDOB(row_dob)
-        if row_sex is not None:
-            Patient.setSex(row_sex)
         if row_height_dos is not None:
             Patient.setHeight(row_height_dos)
-        if row_date_preop is not None:
-            Patient.setPreOpDate(row_date_preop)
-        else:
-            print("warning: no pre-op date")
-        if row_creat_preop is not None:
-            Patient.setPreOpCreat(row_creat_preop)
         if len(row_weight) is not 0:
             Patient.setWeights(row_weight)
-            #print(row_weight)
-        else:
-            print("Warning: No weight info")
         if row_bari_dos is not None:
             Patient.setBariDOS(row_bari_dos)
-        if len(row_HCO3) is not 0:
-            Patient.setHCO3s(row_HCO3)
-            #print(row_HCO3)
-        else:
-            print("Warning: No HCO3 info")
-        Patient.set_exclusions(loop_exclusion, opiate_exclusion, ca_exclusion, other_exclusion)
         i = i+1
     return Patients
 
@@ -324,24 +178,6 @@ def test_db_gen():
     return db
 
 
-def AccessDatabase(db_loc, compliance_db_loc, compliance_data_sheet_name,
-        outcome_db_loc, outcome_data_sheet_name):
-    """Accesses the two databases (compliance excel doc) and compliance excel
-    doc and combines them, outputting a RecordsDb object with all records
-    populated
-    db_loc = the root folder that contains both excel docs
-    compliance_db_loc = location of the compliance excel
-    compliance_data_sheet_name
-    outcome_db_loc = location of the outcome excel
-    outcome_data_sheet_name
-    """
-
-    # This could have been done more elegantly w/ dataframe merge + groupby?
-    compliance_sheet = load_sheet(db_loc + compliance_db_loc, compliance_data_sheet_name)
-    outcomes_sheet = load_sheet(db_loc + outcome_db_loc, outcome_data_sheet_name)
-    return create_patient_db(compliance_sheet, outcomes_sheet)
-
-
 def main():
     # 0 for testing, 1 to run
     testing_mode = 1
@@ -349,7 +185,36 @@ def main():
     if testing_mode == 0:
         database = test_db_gen()
     else:
-        pass
+        # This could have been done more elegantly w/ dataframe merge + groupby?
+        compliance_sheet = load_sheet(db_loc + compliance_db_loc, compliance_data_sheet_name)
+        outcomes_sheet = load_sheet(db_loc + outcome_db_loc, outcome_data_sheet_name)
+        database = create_patient_db(compliance_sheet, outcomes_sheet)
+
+
+    print("\nWeight On Day of Surgery (Kg):")
+    print(database.WeightDOSList().describe())
+
+    print("\nWeight Loss Acheived (Kg):")
+    print(database.WeightLossList().describe())
+
+    print("\nWeight Regain Observed (Kg):")
+    print(database.WeightRegainList().describe())
+
+    df = database.createDataFrame()
+
+    # Print Stats for the subset with compliance data and without
+    print("\nThose w/ compliance data")
+    print(df[df['Avg Compliance'] > 0.0].describe())
+    print("\nthose w/o compliance data")
+    print(df[df['Avg Compliance'] == 0.0].describe())
+
+    # Print Stats for the subset with a diagnostic AHI
+    print("\nThose w/ diagnostic AHI")
+    print(df[df['Diag AHI'].notnull()].describe())
+
+
+
+    df.to_excel('output.xlsx')
 
 
 if __name__ == '__main__':
