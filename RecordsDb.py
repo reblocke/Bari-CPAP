@@ -74,6 +74,7 @@ class RecordsDb:
         BMI DOS
         Diag AHI
         Avg CPAP Compliance
+        Days of Compliance Records
         """
 
         index = list()
@@ -82,6 +83,8 @@ class RecordsDb:
         BMI_DOS = list()
         pt_diag_AHI = list()
         pt_avg_comp = list()
+        pt_comp_days = list()
+
         for patient in self.PatientArray:
             index.append(patient.MRN)
             weight_regain.append(patient.weightRegain())
@@ -89,8 +92,15 @@ class RecordsDb:
             BMI_DOS.append(patient.BMIDOS())
             pt_diag_AHI.append(patient.Diag_AHI)
             pt_avg_comp.append(patient.avgCompliance())
+            pt_comp_days.append(patient.numDaysComplianceRecords())
 
-        return pd.DataFrame({'mrn': index, 'wrg':weight_regain, 'mwl':max_wt_loss, 'bmi':BMI_DOS, 'dAHI':pt_diag_AHI, 'pac':pt_avg_comp})
+        return pd.DataFrame({'MRN': index,
+                                'Weight Regain': weight_regain,
+                                'Max Weight Loss': max_wt_loss,
+                                'BMI': BMI_DOS,
+                                'Diag AHI': pt_diag_AHI,
+                                'Avg Compliance': pt_avg_comp,
+                                'Days Comp Records': pt_comp_days})
 
     def printDb(self):
         for record in self.PatientArray:
@@ -119,7 +129,10 @@ class PatientRecord:
     Weights = None  # [DOS, +2mo, +4mo, +6mo, +1y, +2y, +3y, +4y, +5y]. Kgs
 
     def __init__(self, mrn):
-        self.MRN = mrn
+        if mrn is None:
+            self.MRN = 0
+        else:
+            self.MRN = mrn
         self.Diag_AHI = None
         self.Diag_AHI_Date = None
         self.Compliance_Records = list()

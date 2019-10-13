@@ -1,0 +1,59 @@
+Processing Outcomes
+Processing Adherence
+Number of AHIs: 117
+Median: 23.3
+Std Dev: 31.656822612499273
+
+Weight On Day of Surgery (Kg):
+count    351.000000
+mean     126.029402
+std       25.507060
+min       68.390000
+25%      108.685000
+50%      122.500000
+75%      137.945000
+max      248.300000
+dtype: float64
+
+Weight Loss Acheived (Kg):
+count    351.000000
+mean      32.039288
+std       17.667273
+min        0.000000
+25%       21.715000
+50%       31.080000
+75%       41.655000
+max      105.860000
+dtype: float64
+
+Weight Regain Observed (Kg):
+count    358.000000
+mean       6.286480
+std        8.263524
+min        0.000000
+25%        0.000000
+50%        3.245000
+75%       10.022500
+max       36.470000
+dtype: float64
+Those w/ compliance data
+count    84.000000
+mean      8.452262
+std       9.274125
+min       0.000000
+25%       0.000000
+50%       4.970000
+75%      13.845000
+max      34.470000
+Name: Weight Regain, dtype: float64
+those w/o compliance data
+count    274.000000
+mean       5.622518
+std        7.826989
+min        0.000000
+25%        0.000000
+50%        2.115000
+75%        8.382500
+max       36.470000
+Name: Weight Regain, dtype: float64
+Those w/ diagnostic AHI

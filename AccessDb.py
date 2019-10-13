@@ -31,7 +31,7 @@ def process_Adherence_db(Patients, compliance_sheet):
     Diag_AHI_Date_Column = 18 # "S"
     Percent_Days_4_Hours_Column = 5  # "F"
     Num_Days_Reported_Column = 6  # "G"
-    Download_Date_Column = 1  # bug"B"
+    Download_Date_Column = 1  # "B"
     i = 1
 
     print("Processing Adherence")
@@ -64,7 +64,8 @@ def process_Adherence_db(Patients, compliance_sheet):
         except (ValueError, TypeError):
             download_date = None
 
-        row_compliance = complianceReport(download_date, num_days_reported, percent_days_4_hours)
+        row_compliance = complianceReport(download_date, num_days_reported,
+            percent_days_4_hours)
 
         # print("Processing adherence record number " + str(i-1))
         Patient = Patients.findPatient(row_mrn)
@@ -93,7 +94,9 @@ def process_Outcomes_Db(Patients, outcomes_sheet):
     Weight_4y_Column = 18  # "S"
     Weight_5y_Column = 19  # "T"
 
-    weightOrder = [Weight_DOS_Column, Weight_2mo_Column, Weight_4mo_Column, Weight_6mo_Column, Weight_1y_Column, Weight_2y_Column, Weight_3y_Column, Weight_4y_Column, Weight_5y_Column]
+    weightOrder = [Weight_DOS_Column, Weight_2mo_Column, Weight_4mo_Column,
+        Weight_6mo_Column, Weight_1y_Column, Weight_2y_Column, Weight_3y_Column,
+        Weight_4y_Column, Weight_5y_Column]
 
     print("Processing Outcomes")
     i = 1  # The row the data starts on
@@ -103,7 +106,10 @@ def process_Outcomes_Db(Patients, outcomes_sheet):
     for patient_row in outcomes_iter:
         # For each row that has an MRN entry...
         # print("Processing chart #" + str(i))
-        row_mrn = patient_row[MRN_Column].value
+        try:
+            row_mrn = int(patient_row[MRN_Column].value)
+        except(ValueError, TypeError):
+            row_mrn = None
         row_bari_dos = patient_row[Bari_Surg_Date_Column].value
 
         try:
@@ -142,7 +148,8 @@ def test_db_gen():
     patient1.addComplianceRecord(record1)
     patient1.addComplianceRecord(record2)
     patient1.setHeight(185.0)
-    patient1.setWeights([150.0, 140.0, 140.0, 140.0, 130.0, 140.0, 145.0, None, 160.0])
+    patient1.setWeights(
+        [150.0, 140.0, 140.0, 140.0, 130.0, 140.0, 145.0, None, 160.0])
     # [DOS, +2mo, +4mo, +6mo, +1y, +2y, +3y, +4y, +5y]
     print(patient1.BMIDOS())
     db.addPatient(patient1)
@@ -154,7 +161,8 @@ def test_db_gen():
     patient2.addComplianceRecord(record3)
     patient2.addComplianceRecord(record4)
     patient2.setHeight(150.0)
-    patient2.setWeights([130.0, 135.0, 140.0, 140.0, 130.0, 140.0, 145.0, 155.0, None])
+    patient2.setWeights(
+        [130.0, 135.0, 140.0, 140.0, 130.0, 140.0, 145.0, 155.0, None])
     db.addPatient(patient2)
 
     patient3 = PatientRecord(1245)
@@ -177,23 +185,11 @@ def main():
     if testing_mode == 0:
         database = test_db_gen()
     else:
+        # This could have been done more elegantly w/ dataframe merge + groupby?
         compliance_sheet = load_sheet(db_loc + compliance_db_loc, compliance_data_sheet_name)
         outcomes_sheet = load_sheet(db_loc + outcome_db_loc, outcome_data_sheet_name)
         database = create_patient_db(compliance_sheet, outcomes_sheet)
 
-    #database.printDb()
-
-    # Summary Statistics:
-
-    AHIList = database.AHIList()
-    i = []
-    for AHI in AHIList:
-        if AHI is not None:
-            i.append(AHI)
-    print("Number of AHIs: " + str(len(i)))
-    ObtainedAHIs = pd.Series(i)
-    print("Median: " + str(ObtainedAHIs.median()))
-    print("Std Dev: " + str(ObtainedAHIs.std()))
 
     print("\nWeight On Day of Surgery (Kg):")
     print(database.WeightDOSList().describe())
@@ -205,7 +201,20 @@ def main():
     print(database.WeightRegainList().describe())
 
     df = database.createDataFrame()
-    # TODO: troubleshoot why more entries for weight regain?
+
+    # Print Stats for the subset with compliance data and without
+    print("\nThose w/ compliance data")
+    print(df[df['Avg Compliance'] > 0.0].describe())
+    print("\nthose w/o compliance data")
+    print(df[df['Avg Compliance'] == 0.0].describe())
+
+    # Print Stats for the subset with a diagnostic AHI
+    print("\nThose w/ diagnostic AHI")
+    print(df[df['Diag AHI'].notnull()].describe())
+
+
+
+    df.to_excel('output.xlsx')
 
 
 if __name__ == '__main__':
