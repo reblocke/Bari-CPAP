@@ -3,6 +3,12 @@ from openpyxl import load_workbook
 import pandas as pd
 from RecordsDb import *
 
+# Locations
+db_loc = "/Users/reblocke/Box/Residency Personal Files/Scholarly Work/Bariatric CPAP Project/Bariatric Clinic data/"
+compliance_db_loc = "BARI_SLEEP_CPAP_COMPLIANCE_092619.xlsx"
+outcome_db_loc = "BARI_SLEEP_031919 from EDW - edits.xlsx"
+compliance_data_sheet_name = "Sheet 1"
+outcome_data_sheet_name = "Sheet 1"
 
 def load_sheet(location, sheet_name):
     """loads the sheet excel doc and returns the compliance sheet"""
@@ -34,7 +40,6 @@ def process_Adherence_db(Patients, compliance_sheet):
     next(compliance_iter)  # skip first row
     for patient_row in compliance_iter:
         try:
-            # Uses real MRN to cross-index the two databases
             row_mrn = int(patient_row[MRN_Column].value)
         except (ValueError, TypeError):
             row_mrn = None
@@ -173,24 +178,6 @@ def test_db_gen():
     return db
 
 
-def AccessDatabase(db_loc, compliance_db_loc, compliance_data_sheet_name,
-        outcome_db_loc, outcome_data_sheet_name):
-    """Accesses the two databases (compliance excel doc) and compliance excel
-    doc and combines them, outputting a RecordsDb object with all records
-    populated
-    db_loc = the root folder that contains both excel docs
-    compliance_db_loc = location of the compliance excel
-    compliance_data_sheet_name
-    outcome_db_loc = location of the outcome excel
-    outcome_data_sheet_name
-    """
-
-    # This could have been done more elegantly w/ dataframe merge + groupby?
-    compliance_sheet = load_sheet(db_loc + compliance_db_loc, compliance_data_sheet_name)
-    outcomes_sheet = load_sheet(db_loc + outcome_db_loc, outcome_data_sheet_name)
-    return create_patient_db(compliance_sheet, outcomes_sheet)
-
-
 def main():
     # 0 for testing, 1 to run
     testing_mode = 1
@@ -198,7 +185,36 @@ def main():
     if testing_mode == 0:
         database = test_db_gen()
     else:
-        pass
+        # This could have been done more elegantly w/ dataframe merge + groupby?
+        compliance_sheet = load_sheet(db_loc + compliance_db_loc, compliance_data_sheet_name)
+        outcomes_sheet = load_sheet(db_loc + outcome_db_loc, outcome_data_sheet_name)
+        database = create_patient_db(compliance_sheet, outcomes_sheet)
+
+
+    print("\nWeight On Day of Surgery (Kg):")
+    print(database.WeightDOSList().describe())
+
+    print("\nWeight Loss Acheived (Kg):")
+    print(database.WeightLossList().describe())
+
+    print("\nWeight Regain Observed (Kg):")
+    print(database.WeightRegainList().describe())
+
+    df = database.createDataFrame()
+
+    # Print Stats for the subset with compliance data and without
+    print("\nThose w/ compliance data")
+    print(df[df['Avg Compliance'] > 0.0].describe())
+    print("\nthose w/o compliance data")
+    print(df[df['Avg Compliance'] == 0.0].describe())
+
+    # Print Stats for the subset with a diagnostic AHI
+    print("\nThose w/ diagnostic AHI")
+    print(df[df['Diag AHI'].notnull()].describe())
+
+
+
+    df.to_excel('output.xlsx')
 
 
 if __name__ == '__main__':
