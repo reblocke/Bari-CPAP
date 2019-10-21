@@ -85,8 +85,10 @@ class RecordsDb:
         pt_avg_comp = list()
         pt_comp_days = list()
 
+        i = 1
         for patient in self.PatientArray:
-            index.append(patient.MRN)
+            index.append(i)  # (patient.MRN) if using real MRN
+            i = i+1
             weight_regain.append(patient.weightRegain())
             max_wt_loss.append(patient.maxWeightLoss())
             BMI_DOS.append(patient.BMIDOS())
@@ -139,6 +141,7 @@ class PatientRecord:
         self.Bari_Surg_Date = None
         self.Height_DOS = None
         self.Weights = list()
+        self.Index = None
 
     def setAHI(self, diag_ahi, diag_ahi_date):
         self.Diag_AHI = diag_ahi
@@ -226,14 +229,18 @@ class PatientRecord:
 
     def printPtRecord(self):
         print("MRN: " + str(self.MRN) + ", Diag_AHI: " + str(self.Diag_AHI))
-        print("DOS:" + str(self.Bari_Surg_Date) + " @ BMI: " + str(self.BMIDOS()))
+        print("DOS:" + str(self.Bari_Surg_Date) + " @ BMI: "
+                + str(self.BMIDOS()))
         print("Weights: " + str(self.Weights))
-        print("Diagnostic AHI: " + str(self.Diag_AHI) + " on " + str(self.Diag_AHI_Date))
-        print("Total of " +str(len(self.Compliance_Records)) + " compliance records")
+        print("Diagnostic AHI: " + str(self.Diag_AHI)
+                + " on " + str(self.Diag_AHI_Date))
+        print("Total of " + str(len(self.Compliance_Records))
+                + " compliance records")
         for i in self.Compliance_Records:
             i.printCompRecord()
         print("Avg 4h+ compliance: " + str(self.avgCompliance()))
-        print("Based on " + str(self.numDaysComplianceRecords()) + " days of records")
+        print("Based on " + str(self.numDaysComplianceRecords())
+                + " days of records")
 
 
 class complianceReport:
@@ -258,4 +265,5 @@ class complianceReport:
             self.days_used_4h = float(days_used_4h)  # percentage
 
     def printCompRecord(self):
-        print(str(self.date) +": Used 4+ h on " + str(self.days_used_4h) + "% of last " +str (self.days) + " days")
+        print(str(self.date) + ": Used 4+ h on " + str(self.days_used_4h)
+            + "% of last " + str (self.days) + " days")
