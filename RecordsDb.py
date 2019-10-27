@@ -75,6 +75,7 @@ class RecordsDb:
         Diag AHI
         Avg CPAP Compliance
         Days of Compliance Records
+        Last Weight (=time of last recorded weight)
         """
 
         index = list()
@@ -84,6 +85,7 @@ class RecordsDb:
         pt_diag_AHI = list()
         pt_avg_comp = list()
         pt_comp_days = list()
+        pt_last_weight_time = list()
 
         i = 1
         for patient in self.PatientArray:
@@ -95,6 +97,7 @@ class RecordsDb:
             pt_diag_AHI.append(patient.Diag_AHI)
             pt_avg_comp.append(patient.avgCompliance())
             pt_comp_days.append(patient.numDaysComplianceRecords())
+            pt_last_weight_time.append(patient.lastWeightTime())
 
         return pd.DataFrame({'MRN': index,
                                 'Weight Regain': weight_regain,
@@ -102,7 +105,8 @@ class RecordsDb:
                                 'BMI': BMI_DOS,
                                 'Diag AHI': pt_diag_AHI,
                                 'Avg Compliance': pt_avg_comp,
-                                'Days Comp Records': pt_comp_days})
+                                'Days Comp Records': pt_comp_days,
+                                'Last Weight Time': pt_last_weight_time})
 
     def printDb(self):
         for record in self.PatientArray:
@@ -211,6 +215,15 @@ class PatientRecord:
                 if weight is not None and weight < min:
                     min = weight
             return self.Weights[0] - min
+
+    def lastWeightTime(self):
+        '''returns the number of months since surgery of the last recorded
+        weight'''
+        months_since = {0: 0, 1: 2, 2: 4, 3: 6, 4: 12, 5: 24, 6: 36, 7: 48, 8: 60}
+        for i in range(len(self.Weights)-1, 0, -1):  # update dic if wt len change
+            print(i)
+            if self.Weights[i] is not None:
+                return months_since[i]
 
     def weightRegain(self):
         """returns last weight minus lightest weight"""
