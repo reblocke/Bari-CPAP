@@ -5,6 +5,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
+from scipy import stats
 
 
 # Locations
@@ -64,14 +65,47 @@ def RegainHistogramsCompliance(df):
     plt.show()  # only invoke 1 time per script
 
 
+def weightRegainBMI(df):
+    g = sns.jointplot(x='BMI', y='Max Weight Loss', data=df)
+    plt.show()
+
+def compareCompVsNotWR(df):
+    compliantPt = df[df['Avg Compliance'] > 0.0]
+    noCompliantPt = df[df['Avg Compliance'] == 0.0]
+
+    compliantPt.reset_index(inplace=True)
+    noCompliantPt.reset_index(inplace=True)
+    # Can't use independent T-test as variances are not homogenous
+    # print(stats.levene(compliantPt['Weight Regain'], noCompliantPt['Weight Regain']))
+    # Can't use tests assuming normality
+    # print(stats.shapiro(compliantPt['Weight Regain']))
+    # Unequal datset size?
+
+    pass
+
+def weightLossAndRegainVsAHI(df):
+    sns.set()
+    colors = ["Red", "Blue"]
+    sns.set_palette(colors)
+    sns.set_style("whitegrid")
+    AHIdf = df[df['Diag AHI'].notnull()]
+    f, axs = plt.subplots(2)
+    f.suptitle("Maximum Weight Loss and Weight Regain vs Diagnostic AHI")
+    sns.regplot(x='Diag AHI', y='Weight Regain', data=AHIdf, ax=axs[1])
+    sns.regplot(x='Diag AHI', y='Max Weight Loss', data=AHIdf, ax=axs[0])
+    axs[0].set_xlabel("Diagnostic AHI (events/hr)")
+    axs[0].set_ylabel("Maximum Weight Loss (kg)")
+    axs[1].set_xlabel("Diagnostic AHI (events/hr)")
+    axs[1].set_ylabel("Weight Regain (kg)")
+
+    #sns.boxplot(y='Weight Regain', data=noCompliantPt)
+    #g = sns.jointplot(x='BMI', y='Max Weight Loss', data=df)
+    #g.set_title("BMI vs Maximum Weight Loss Achieved")
+    plt.tight_layout()
+    plt.savefig("WLandWR_kg_vs_DiagAHI.png")
+
 def visualizations(df):
     sns.set()
-    # compliantPt = df[df['Avg Compliance'] > 0.0]
-    # noCompliantPt = df[df['Avg Compliance'] == 0.0]
-
-    g = sns.jointplot(x='BMI', y='Max Weight Loss', data=df)
-    #g.set_title("BMI vs Maximum Weight Loss Achieved")
-
     plt.show()  # only invoke 1 time per script
 
 
