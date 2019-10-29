@@ -61,7 +61,7 @@ def RegainHistogramsCompliance(df):
     ax.set_ylabel("Percentage of patients")
     ax.legend(fancybox=True, framealpha=1, shadow=True, borderpad=1)
 
-    fig.savefig('regainHist.png')
+    fig.savefig('regainHist_final.png')
     plt.show()  # only invoke 1 time per script
 
 
@@ -77,35 +77,61 @@ def compareCompVsNotWR(df):
     noCompliantPt.reset_index(inplace=True)
     # Can't use independent T-test as variances are not homogenous
     # print(stats.levene(compliantPt['Weight Regain'], noCompliantPt['Weight Regain']))
-    # Can't use tests assuming normality
+
+    # Can't use tests assuming normality (=need non-parametric test)
     # print(stats.shapiro(compliantPt['Weight Regain']))
+
+
     # Unequal datset size?
 
     pass
 
 def weightLossAndRegainVsAHI(df):
     sns.set()
-    colors = ["Red", "Blue"]
-    sns.set_palette(colors)
-    sns.set_style("whitegrid")
+    xkcd = ['#c04e01', "#980002"]
+    sns.set_palette(xkcd)
+    #sns.set_style("whitegrid")
     AHIdf = df[df['Diag AHI'].notnull()]
     f, axs = plt.subplots(2)
     f.suptitle("Maximum Weight Loss and Weight Regain vs Diagnostic AHI")
-    sns.regplot(x='Diag AHI', y='Weight Regain', data=AHIdf, ax=axs[1])
-    sns.regplot(x='Diag AHI', y='Max Weight Loss', data=AHIdf, ax=axs[0])
+    sns.regplot(x='Diag AHI', y='Weight Regain', data=AHIdf, ax=axs[0])
+    sns.regplot(x='Diag AHI', y='Max Weight Loss Pct', data=AHIdf, ax=axs[1])
     axs[0].set_xlabel("Diagnostic AHI (events/hr)")
-    axs[0].set_ylabel("Maximum Weight Loss (kg)")
+    axs[0].set_ylabel("Weight Regain (kg)")
     axs[1].set_xlabel("Diagnostic AHI (events/hr)")
-    axs[1].set_ylabel("Weight Regain (kg)")
+    axs[1].set_ylabel("Maximum Weight Loss\n(%Weight DOS)")
 
-    #sns.boxplot(y='Weight Regain', data=noCompliantPt)
-    #g = sns.jointplot(x='BMI', y='Max Weight Loss', data=df)
-    #g.set_title("BMI vs Maximum Weight Loss Achieved")
-    plt.tight_layout()
-    plt.savefig("WLandWR_kg_vs_DiagAHI.png")
+    # TODO: INCLUDE PARTIAL REGRESSION ON TIME OF LAST WEIGHT REGAIN
+    # Appears the regplot partial regression call is broken.
+
+    f.tight_layout(rect=[0, 0.03, 1, 0.95])
+    plt.savefig("WLandWR_kg_vs_DiagAHI_FinalDb.png")
+
+
+def lastWtWR(df):
+    sns.set()
+    ax = sns.regplot(x='Last Weight Time', y='Weight Regain', data=df)
+    ax.set_xlabel("Months since bariatric surgery of LAST recorded weight")
+    ax.set_ylabel("Weight Regain (Kg)")
+    plt.title("Influence of Last Weight Recorded vs Weight Regain")
+    # This shows that time for last recorded weight is a possible confounder-
+    # and is almost certainly given that compliance to CPAP => more likely
+    # later weights
+    plt.show()  # only invoke 1 time per script
+
 
 def visualizations(df):
     sns.set()
+    #weightLossAndRegainVsAHI(df)
+    #lastWtWR(df)
+    #RegainHistogramsCompliance(df)
+    #ComplianceVsWeightRegain(df)
+
+
+    # 3 data points = weight DOS, min weight, last weight
+
+
+
     plt.show()  # only invoke 1 time per script
 
 
@@ -115,27 +141,31 @@ def main():
 
     df = database.createDataFrame()
 
-    print("\nWeight On Day of Surgery (Kg):")
+    print("\nWeight On Day of Surgery (Kg) - All Db:")
     print(database.WeightDOSList().describe())
 
-    print("\nWeight Loss Acheived (Kg):")
-    print(database.WeightLossList().describe())
 
-    print("\nWeight Regain Observed (Kg):")
-    print(database.WeightRegainList().describe())
+    #Print Stats on entire db:
+    print("\nEntire Database:")
+    print(df.describe())
+
+    print("\nThose w/ diagnostic AHI")
+    final_df = df[df['Diag AHI'].notnull()]  # filter out no diag ahi
+    final_df = final_df[final_df['DOS Weight'].notnull()]  # filter no wt DOS
+    #print(final_df.describe())
+    final_df.describe().to_excel('Describe Final Df.xlsx')
 
     # Print Stats for the subset with compliance data and without
-    print("\nThose w/ compliance data")
-    print(df[df['Avg Compliance'] > 0.0].describe())
-    print("\nthose w/o compliance data")
-    print(df[df['Avg Compliance'] == 0.0].describe())
+    print("\nThose w/ compliance + Dx AHI")
+    #print(final_df[final_df['Avg Compliance'] > 0.0].describe())
+    final_df[final_df['Avg Compliance'] > 0.0].describe().to_excel('Describe Final Df w Comp.xlsx')
 
-    # Print Stats for the subset with a diagnostic AHI
-    print("\nThose w/ diagnostic AHI")
-    print(df[df['Diag AHI'].notnull()].describe())
+    print("\nthose w/o compliance (0 or no data)+ Dx AHI")
+    #print(final_df[final_df['Avg Compliance'] == 0.0].describe())
+    final_df[final_df['Avg Compliance'] == 0.0].describe().to_excel('Describe Final Df wo Comp.xlsx')
 
     df.to_excel('output.xlsx')
-    visualizations(df)
+    visualizations(final_df)
 
     # RegainHistogramsCompliance(df)
     # ComplianceVsWeightRegain(df)

@@ -75,38 +75,53 @@ class RecordsDb:
         Diag AHI
         Avg CPAP Compliance
         Days of Compliance Records
-        Last Weight (=time of last recorded weight)
+        Last Weight Time (=time in mo from surg of last recorded weight)
         """
 
         index = list()
+        weight_DOS = list()
+        min_weight = list()
+        min_weight_time = list()
+        last_weight = list()
+        last_weight_time = list()
         weight_regain = list()
         max_wt_loss = list()
         BMI_DOS = list()
         pt_diag_AHI = list()
         pt_avg_comp = list()
         pt_comp_days = list()
-        pt_last_weight_time = list()
+        pt_max_wt_loss_pct = list()
 
         i = 1
         for patient in self.PatientArray:
             index.append(i)  # (patient.MRN) if using real MRN
             i = i+1
             weight_regain.append(patient.weightRegain())
+            weight_DOS.append(patient.weightDOS())
+            min_weight.append(patient.getMinWeight())
+            min_weight_time.append(patient.minWeightTime())
+            last_weight.append(patient.getLastWeight())
+            last_weight_time.append(patient.lastWeightTime())
             max_wt_loss.append(patient.maxWeightLoss())
             BMI_DOS.append(patient.BMIDOS())
             pt_diag_AHI.append(patient.Diag_AHI)
             pt_avg_comp.append(patient.avgCompliance())
             pt_comp_days.append(patient.numDaysComplianceRecords())
-            pt_last_weight_time.append(patient.lastWeightTime())
+            pt_max_wt_loss_pct.append(patient.percentWeightLoss())
 
         return pd.DataFrame({'MRN': index,
+                                'DOS Weight': weight_DOS,
+                                'Min Weight': min_weight,
+                                'Min Weight Time': min_weight_time,
+                                'Last Weight': last_weight,
+                                'Last Weight Time': last_weight_time,
                                 'Weight Regain': weight_regain,
                                 'Max Weight Loss': max_wt_loss,
                                 'BMI': BMI_DOS,
                                 'Diag AHI': pt_diag_AHI,
                                 'Avg Compliance': pt_avg_comp,
                                 'Days Comp Records': pt_comp_days,
-                                'Last Weight Time': pt_last_weight_time})
+                                'Max Weight Loss Pct': pt_max_wt_loss_pct})
 
     def printDb(self):
         for record in self.PatientArray:
@@ -133,6 +148,7 @@ class PatientRecord:
     Bari_Surg_Date = None
     Height_DOS = None
     Weights = None  # [DOS, +2mo, +4mo, +6mo, +1y, +2y, +3y, +4y, +5y]. Kgs
+    # Sex = None  Revisit once gender added to Db
 
     def __init__(self, mrn):
         if mrn is None:
@@ -146,6 +162,7 @@ class PatientRecord:
         self.Height_DOS = None
         self.Weights = list()
         self.Index = None
+        # self.Sex = None
 
     def setAHI(self, diag_ahi, diag_ahi_date):
         self.Diag_AHI = diag_ahi
@@ -216,14 +233,72 @@ class PatientRecord:
                     min = weight
             return self.Weights[0] - min
 
+    def percentWeightLoss(self):
+        '''returns maximum weight loss as a percentage of weight at DOS'''
+        if len(self.Weights) is 0 or self.Weights[0] is None:
+            return None
+        else:
+            min = self.Weights[0]
+            for weight in self.Weights:
+                if weight is not None and weight < min:
+                    min = weight
+            return (1.0 - (min / self.Weights[0]))*100
+
+
+    def percentExcessWtLoss(self):
+        '''returns maximum percentage of the Weight DOS - IBW (Devine formula)
+        that the patient achieved
+        NOTE: TODO: need to revisit with gender included
+        ON HOLD UNTIL GENDER TAKEN FROM Db
+
+        %EWL = (Preoperative Weight - Follow-up Weight)/(Preoperative Weight - Ideal Body Weight) * 100
+        IBW = formally taken from MetLife Tables.
+        '''
+        if len(self.Weights) is 0 or self.Weights[0] is None or self.Height_DOS is None:
+            return None
+        else:
+            self.Height_DOS / 1.8  #CM to Inches
+            IBW = 50 + (2.3 * self.HeightDOS) # Finish this off
+            min = self.Weights[0]
+            for weight in self.Weights:
+                if weight is not None and weight < min:
+                    min = weight
+            return self.Weights[0] - min
+
     def lastWeightTime(self):
         '''returns the number of months since surgery of the last recorded
         weight'''
         months_since = {0: 0, 1: 2, 2: 4, 3: 6, 4: 12, 5: 24, 6: 36, 7: 48, 8: 60}
         for i in range(len(self.Weights)-1, 0, -1):  # update dic if wt len change
-            print(i)
             if self.Weights[i] is not None:
                 return months_since[i]
+        return 0
+
+    def getLastWeight(self):
+        '''returns the last weight recorded'''
+        for i in range(len(self.Weights)-1, 0, -1):  # update dic if wt len change
+            if self.Weights[i] is not None:
+                return self.Weights[i]
+        return self.weightDOS()
+
+    def getMinWeight(self):
+        '''returns the lowest weight'''
+        min = 9999  # larger than largest
+        for weight in self.Weights:
+            if weight is not None and weight < min:
+                min = weight
+        return min
+
+    def minWeightTime(self):
+        '''returns the time (in months) of the minimum recorded weight'''
+        min = 9999  # larger than largest
+        min_i = 0
+        months_since = {0: 0, 1: 2, 2: 4, 3: 6, 4: 12, 5: 24, 6: 36, 7: 48, 8: 60}
+        for i in range(len(self.Weights)):  # update dic if wt len change
+            if self.Weights[i] is not None and self.Weights[i] < min:
+                min = self.Weights[i]
+                min_i = i
+        return months_since[min_i]
 
     def weightRegain(self):
         """returns last weight minus lightest weight"""
