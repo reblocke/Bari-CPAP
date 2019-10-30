@@ -6,7 +6,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 from scipy import stats
-
+import matplotlib.patches as mpatches
+import statsmodels.api as sm
+from statsmodels.formula.api import ols
+from statsmodels.sandbox.regression.predstd import wls_prediction_std
 
 # Locations
 dbLoc = "/Users/reblocke/Box/Residency Personal Files/Scholarly Work/Bariatric CPAP Project/Bariatric Clinic data/"
@@ -119,20 +122,67 @@ def lastWtWR(df):
     # later weights
     plt.show()  # only invoke 1 time per script
 
+def weightDOSMinLastByPap(df):
+    sns.set()
+    sns.set_style("white")
+    fig, axs = plt.subplots(1,11, sharey='row')
+
+    comp_df = df[df['Avg Compliance'] > 0.0]
+    no_comp_df = df[df['Avg Compliance'] == 0.0]
+
+    sns.boxplot(y='DOS Weight', data = df, ax=axs[0], color='green')
+    axs[0].set_ylabel("Weight in Kg")
+    #axs[0].set_xlabel("DOS, All")
+    sns.boxplot(y='DOS Weight', data = comp_df, ax=axs[1], color='blue')
+    axs[1].set_ylabel("")
+    axs[1].set_xlabel("Weight At Surgery\n(t=0 months)")
+    sns.boxplot(y='DOS Weight', data = no_comp_df, ax=axs[2], color='yellow')
+    axs[2].set_ylabel("")
+    axs[2].label = "No Compliance"
+    axs[3].set_visible(False)
+    sns.boxplot(y='Min Weight', data = df, ax=axs[4], color='green')
+    axs[4].set_ylabel("")
+    sns.boxplot(y='Min Weight', data = comp_df, ax=axs[5], color='blue')
+    axs[5].set_ylabel("")
+    axs[5].set_xlabel("Weight Nadir\n(16.8 +/-12.7 months)")
+    sns.boxplot(y='Min Weight', data = no_comp_df, ax=axs[6], color='yellow')
+    axs[6].set_ylabel("")
+    axs[7].set_visible(False)
+    sns.boxplot(y='Last Weight', data = df, ax=axs[8], color='green')
+    axs[8].set_ylabel("")
+    sns.boxplot(y='Last Weight', data = comp_df, ax=axs[9], color='blue')
+    axs[9].set_ylabel("")
+    axs[9].set_xlabel("Last Recorded Weight\n(36.1 +/-16.5 months)")
+    sns.boxplot(y='Last Weight', data = no_comp_df, ax=axs[10], color='yellow')
+    axs[10].set_ylabel("")
+
+    sns.despine(top=True, right=True, left=True, bottom=True)
+    fig.suptitle("Weight Loss and Regain in CPAP Users and Nonusers")
+
+    green_patch = mpatches.Patch(edgecolor='black', facecolor='green', label='All Patients (n='+str(len(df))+')')
+    yellow_patch = mpatches.Patch(edgecolor='black', facecolor='yellow', label='Patients with no CPAP use (n='+str(len(no_comp_df))+')')
+    blue_patch = mpatches.Patch(edgecolor='black', facecolor='blue', label='Patients with any CPAP use (n='+str(len(comp_df))+')')
+
+    plt.legend(handles=[green_patch, blue_patch, yellow_patch])
+    #plt.tight_layout()
+
 
 def visualizations(df):
-    sns.set()
+    weightDOSMinLastByPap(df)
     #weightLossAndRegainVsAHI(df)
     #lastWtWR(df)
     #RegainHistogramsCompliance(df)
     #ComplianceVsWeightRegain(df)
-
-
-    # 3 data points = weight DOS, min weight, last weight
-
-
-
     plt.show()  # only invoke 1 time per script
+
+def compareComplianceWR(df):
+    comp_df = df[df['Avg Compliance'] > 0.0]
+    no_comp_df = df[df['Avg Compliance'] == 0.0]
+    print(stats.ttest_ind(comp_df['Weight Regain'].get_values(),no_comp_df['Weight Regain'].get_values(), equal_var=False))
+    print(stats.mannwhitneyu(comp_df['Weight Regain'].get_values(),no_comp_df['Weight Regain'].get_values(), alternative='two-sided'))
+
+def partialRegressionWt(df):
+    pass
 
 
 def main():
@@ -165,6 +215,8 @@ def main():
     final_df[final_df['Avg Compliance'] == 0.0].describe().to_excel('Describe Final Df wo Comp.xlsx')
 
     df.to_excel('output.xlsx')
+    final_df.to_excel('final output.xlsx')
+    compareComplianceWR(final_df)
     visualizations(final_df)
 
     # RegainHistogramsCompliance(df)
