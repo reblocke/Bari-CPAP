@@ -108,7 +108,7 @@ def weightLossAndRegainVsAHI(df):
     # Appears the regplot partial regression call is broken.
 
     f.tight_layout(rect=[0, 0.03, 1, 0.95])
-    plt.savefig("WLandWR_kg_vs_DiagAHI_FinalDb.png")
+    plt.savefig("WLandWR_kg_vs_DiagAHI_FinalDb.jpg")
 
 
 def lastWtWR(df):
