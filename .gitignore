@@ -1,6 +1,47 @@
-
+# OS/editor artifacts
 .DS_Store
-venv/.DS_Store
-venv/lib/.DS_Store
-venv/lib/python3.7/.DS_Store
-venv/lib/python3.7/site-packages/.DS_Store
+Thumbs.db
+.idea/
+*.swp
+*.swo
+~$*
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+env/
+
+# Restricted/local clinical data
+data/
+Data/
+BARI_SLEEP_CPAP_COMPLIANCE_092619.xlsx
+Bari HCO3 10-30-21-working.xlsx
+*.xlsm
+*.dta
+!tests/fixtures/
+!tests/fixtures/BARI_SLEEP_CPAP_COMPLIANCE_092619.xlsx
+!tests/fixtures/Bari HCO3 10-30-21-working.xlsx
+
+# Generated outputs
+outputs/
+dist figs/
+full_output.xlsx
+output.xlsx
+output_stats.xlsx
+*_output_stats.xlsx
+Describe Final Df*.xlsx
+DescriptiveStats.txt
+WeightRegain.txt
+*.log
+
+# Legacy generated figures formerly tracked at root
+WLandWR_kg_vs_DiagAHI_FinalDb.png
+Weight Regain vs Adherence.png
+figure_1*.png
+figure_2*.png
+regainHist_final.png
