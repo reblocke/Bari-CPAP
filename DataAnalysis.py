@@ -1,7 +1,14 @@
+import argparse
+import sys
+from contextlib import redirect_stdout
+from pathlib import Path
+
 import pandas as pd
 from RecordsDb import *
 from AccessDb import AccessDatabase
 import matplotlib as mpl
+
+mpl.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
@@ -13,11 +20,41 @@ from statsmodels.sandbox.regression.predstd import wls_prediction_std
 
 
 # Locations
-dbLoc = "/Users/reblocke/Box Sync/Residency Personal Files/Scholarly Work/Locke Research Projects/HCO3 in Bariatric Surgery/databases/Working/"
+DEFAULT_INPUT_DIR = Path("data/private")
+DEFAULT_OUTPUT_DIR = Path("outputs/legacy-python")
 compliance_dbLoc = "BARI_SLEEP_CPAP_COMPLIANCE_092619.xlsx"
 outcome_dbLoc = "Bari HCO3 10-30-21-working.xlsx"
 compliance_data_sheet = "Sheet 1"
 outcome_data_sheet = "Sheet 1"
+OUTPUT_DIR = DEFAULT_OUTPUT_DIR
+DIST_FIG_DIR = OUTPUT_DIR / "dist figs"
+
+
+class Tee:
+    """Write console output to stdout and a text log."""
+
+    def __init__(self, *streams):
+        self.streams = streams
+
+    def write(self, text):
+        for stream in self.streams:
+            stream.write(text)
+
+    def flush(self):
+        for stream in self.streams:
+            stream.flush()
+
+
+def configure_output_dir(output_dir):
+    global OUTPUT_DIR, DIST_FIG_DIR
+    OUTPUT_DIR = Path(output_dir)
+    DIST_FIG_DIR = OUTPUT_DIR / "dist figs"
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    DIST_FIG_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def output_path(filename):
+    return OUTPUT_DIR / filename
 
 # Data visualization utilities
 
@@ -57,7 +94,7 @@ def display_dist(df, label, subset="Full Cohort", lim_zero = True):
 
     fig.suptitle("Distribution of: " + str(label) + " in " + str(subset), fontsize='x-large')
     fig.tight_layout(rect=[0, 0, 1, .9])  # .95 to leave space for title
-    fig.savefig('dist figs/Display Dist ' + str(label) + "-"+ str(subset) +'.png', dpi=100)
+    fig.savefig(DIST_FIG_DIR / ('Display Dist ' + str(label) + "-"+ str(subset) +'.png'), dpi=100)
     plt.close()
 
 
@@ -77,7 +114,7 @@ def display_cats(df, label, subset="Full Cohort"):
 
     fig.suptitle("Distribution of: " + str(label) + " in " + str(subset), fontsize='xx-large')
     # fig.tight_layout(rect=[0, 0, 1, .9])  # .95 to leave space for title
-    fig.savefig('dist figs/Display Cat ' + str(label) + "-"+ str(subset) + '.png', dpi=100)
+    fig.savefig(DIST_FIG_DIR / ('Display Cat ' + str(label) + "-"+ str(subset) + '.png'), dpi=100)
     plt.close()
 
 
@@ -104,7 +141,7 @@ def ComplianceVsWeightRegain(df):
     ax.set_ylabel("Weight Regain (Kg)")
     ax.legend(fancybox=True, framealpha=.75, shadow=True, borderpad=1)
 
-    fig.savefig('Weight Regain vs Adherence')
+    fig.savefig(output_path('Weight Regain vs Adherence.png'))
     plt.show()  # only invoke 1 time per script
 
 
@@ -128,13 +165,13 @@ def RegainHistogramsCompliance(df):
     ax.set_ylabel("Percentage of patients")
     ax.legend(fancybox=True, framealpha=1, shadow=True, borderpad=1)
 
-    fig.savefig('regainHist_final.png')
+    fig.savefig(output_path('regainHist_final.png'))
     plt.show()  # only invoke 1 time per script
 
 
 def weightRegainBMI(df):
     g = sns.jointplot(x='BMI', y='Max Weight Loss', data=df)
-    plt.show()
+    plt.close()
 
 
 def compareCompVsNotWR(df):
@@ -178,7 +215,7 @@ def weightLossAndRegainVsAHI(df):
     axs[1].set_ylabel("Weight Regain (kg)\n(Max weight - weight nadir)")
 
     f.tight_layout(rect=[0, 0.03, 1, 0.95])
-    plt.savefig("figure_2_transparent.png", transparent=True)
+    plt.savefig(output_path("figure_2_transparent.png"), transparent=True)
 
 
 def lastWtWR(df):
@@ -190,7 +227,7 @@ def lastWtWR(df):
     # This shows that time for last recorded weight is a possible confounder-
     # and is almost certainly given that compliance to CPAP => more likely
     # later weights
-    plt.show()  # only invoke 1 time per script
+    plt.close()
 
 
 def weightDOSMinLastByPap(df):
@@ -246,7 +283,7 @@ def weightDOSMinLastByPap(df):
     fig.legend(handles=[green_patch, blue_patch, yellow_patch], loc='center', bbox_to_anchor=(0.5, 0.2), framealpha=0)
     plt.ylim(0,200)
     #plt.tight_layout()
-    fig.savefig('figure_1_transparent.png', transparent=True)
+    fig.savefig(output_path('figure_1_transparent.png'), transparent=True)
 
 def delta_hco3_trajectory(df):
     sns.set()
@@ -314,7 +351,7 @@ def delta_hco3_trajectory(df):
     fig.legend(handles=[green_patch, blue_patch, yellow_patch], loc='center', bbox_to_anchor=(0.5, 0.2), framealpha=0)
     plt.ylim(-12,4)
     #plt.tight_layout()
-    fig.savefig('figure_1_delta_HCO3.png', transparent=False)
+    fig.savefig(output_path('figure_1_delta_HCO3.png'), transparent=False)
 
 def hco3_trajectory(df):
     # TODO: finish conversion
@@ -444,8 +481,8 @@ def hco3_trajectory(df):
 
     plt.ylim(12,32)
     #plt.tight_layout()
-    fig.savefig('figure_2_HCO3.png', transparent=False)
-    plt.show()
+    fig.savefig(output_path('figure_2_HCO3.png'), transparent=False)
+    plt.close(fig)
 
 
 def calc_percentiles_by_time(df, columns):
@@ -531,7 +568,7 @@ def visualizations(df):
     #RegainHistogramsCompliance(df)
     #ComplianceVsWeightRegain(df)
     delta_hco3_trajectory(df)
-    plt.show()  # only invoke 1 time per script
+    plt.close()
 
 
 def compareComplianceWR(df):
@@ -542,8 +579,40 @@ def compareComplianceWR(df):
     print(stats.mannwhitneyu(comp_df['Weight Regain'], no_comp_df['Weight Regain'], alternative='two-sided'))
 
 
-def main():
-    database = AccessDatabase(dbLoc, compliance_dbLoc, compliance_data_sheet,
+def parse_args(argv=None):
+    parser = argparse.ArgumentParser(
+        description="Run the legacy Bari-CPAP Python analysis on local restricted workbooks."
+    )
+    parser.add_argument(
+        "--input-dir",
+        default=str(DEFAULT_INPUT_DIR),
+        help="Directory containing the restricted compliance and outcomes workbooks.",
+    )
+    parser.add_argument(
+        "--output-dir",
+        default=str(DEFAULT_OUTPUT_DIR),
+        help="Directory for generated aggregate outputs.",
+    )
+    return parser.parse_args(argv)
+
+
+def validate_inputs(input_dir):
+    input_dir = Path(input_dir)
+    expected = [input_dir / compliance_dbLoc, input_dir / outcome_dbLoc]
+    missing = [str(path) for path in expected if not path.exists()]
+    if missing:
+        raise FileNotFoundError(
+            "Missing required restricted workbook(s): "
+            + ", ".join(missing)
+            + ". Supply local de-identified/approved workbooks or use tests/fixtures."
+        )
+    return input_dir
+
+
+def run_analysis(input_dir, output_dir):
+    input_dir = validate_inputs(input_dir)
+    configure_output_dir(output_dir)
+    database = AccessDatabase(input_dir, compliance_dbLoc, compliance_data_sheet,
         outcome_dbLoc, outcome_data_sheet)
 
     # database.printDb()  #TODO: go through and check that these make sense
@@ -553,7 +622,7 @@ def main():
     #print(database.WeightDOSList().describe())
 
     print(df.describe()['MRN']['count'])
-    df.to_excel('full_output.xlsx')
+    df.to_excel(output_path('full_output.xlsx'))
     print("\nExclude Patients w/ Loop Diuretic Use")
     df = df[df['Loop Exclusion'] == False]
     print(df.describe()['MRN']['count'])
@@ -576,7 +645,7 @@ def main():
     df = df[df['Pre Op sCr'] <= 1.3]
     print(df.describe()['MRN']['count'])
 
-    df.describe().to_excel('whole_cohort_output_stats.xlsx')
+    df.describe().to_excel(output_path('whole_cohort_output_stats.xlsx'))
     whole_df = df
 
     print("How many patients classified as at least 'At Risk' for OHS")
@@ -586,17 +655,17 @@ def main():
     # Print Stats on entire db:
     print("\nEntire Database:")
 
-    df.describe().to_excel('output_stats.xlsx')
+    df.describe().to_excel(output_path('output_stats.xlsx'))
 
     persistent_OHS_df = df[df['Mean HCO3 Post Op'] >= 25.0]
-    persistent_OHS_df.describe().to_excel('persistent_OHS_output_stats.xlsx')
+    persistent_OHS_df.describe().to_excel(output_path('persistent_OHS_output_stats.xlsx'))
     OHS_resolved_df = df[df['Mean HCO3 Post Op'] < 25.0]
-    OHS_resolved_df.describe().to_excel('OHS_resolved_output_stats.xlsx')
+    OHS_resolved_df.describe().to_excel(output_path('OHS_resolved_output_stats.xlsx'))
     print(stats.ttest_ind(OHS_resolved_df['Max Weight Loss'], persistent_OHS_df['Max Weight Loss'], equal_var=False))
     print(stats.ttest_ind(OHS_resolved_df['Weight Regain'], persistent_OHS_df['Weight Regain'], equal_var=False))
     # df = df[df['Diag AHI'].notnull()]  ## restrict to only patients with sleep apnea testing in our system
     # distributions(df)
-    df.to_excel('output.xlsx')
+    df.to_excel(output_path('output.xlsx'))
 
     visualizations(df)
     hco3_trajectory(whole_df)
@@ -605,20 +674,28 @@ def main():
     #final_df = df[df['Diag AHI'].notnull()]  # filter out no diag ahi
     # final_df = final_df[final_df['DOS Weight'].notnull()]  # filter no wt DOS
     #print(final_df.describe())
-    #final_df.describe().to_excel('Describe Final Df.xlsx')
+    #final_df.describe().to_excel(output_path('Describe Final Df.xlsx'))
 
     # Print Stats for the subset with compliance data and without
     #print("\nThose w/ compliance + Dx AHI")
     #print(final_df[final_df['Avg Compliance'] > 0.0].describe())
-    #final_df[final_df['Avg Compliance'] > 0.0].describe().to_excel('Describe Final Df w Comp.xlsx')
+    #final_df[final_df['Avg Compliance'] > 0.0].describe().to_excel(output_path('Describe Final Df w Comp.xlsx'))
 
     #print("\nthose w/o compliance (0 or no data)+ Dx AHI")
     #print(final_df[final_df['Avg Compliance'] == 0.0].describe())
-    #final_df[final_df['Avg Compliance'] == 0.0].describe().to_excel('Describe Final Df wo Comp.xlsx')
+    #final_df[final_df['Avg Compliance'] == 0.0].describe().to_excel(output_path('Describe Final Df wo Comp.xlsx'))
 
     #Statistical tests
     #compareComplianceWR(df)
-    #final_df.to_excel('final output.xlsx')
+    #final_df.to_excel(output_path('final output.xlsx'))
+
+
+def main(argv=None):
+    args = parse_args(argv)
+    configure_output_dir(args.output_dir)
+    with output_path("DescriptiveStats.txt").open("w", encoding="utf-8") as log:
+        with redirect_stdout(Tee(sys.stdout, log)):
+            run_analysis(args.input_dir, args.output_dir)
 
 
 if __name__ == '__main__':

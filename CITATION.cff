@@ -1,0 +1,41 @@
+cff-version: 1.2.0
+message: "If you use this repository, please cite the software and the associated ATS abstract."
+title: "Bari-CPAP"
+type: software
+authors:
+  - family-names: Locke
+    given-names: Brian W.
+    orcid: "https://orcid.org/0000-0002-3588-5238"
+repository-code: "https://github.com/reblocke/Bari-CPAP"
+url: "https://doi.org/10.1164/ajrccm-conference.2022.205.1_MeetingAbstracts.A4996"
+license: "MIT"
+abstract: "Legacy Python analysis for a bariatric surgery cohort examining CPAP use, serum bicarbonate trajectories, and suspected obesity hypoventilation syndrome."
+keywords:
+  - bariatric surgery
+  - obesity hypoventilation syndrome
+  - bicarbonate
+  - CPAP
+  - obstructive sleep apnea
+  - sleep medicine
+  - clinical research
+preferred-citation:
+  type: article
+  authors:
+    - family-names: Locke
+      given-names: Brian W.
+      orcid: "https://orcid.org/0000-0002-3588-5238"
+    - family-names: Addison
+      given-names: Conrad
+    - family-names: Mishra
+      given-names: Somya
+    - family-names: Sundar
+      given-names: Krishna M.
+  title: "Changes in Bicarbonate in Patients at Risk for Obesity Hypoventilation Undergoing Bariatric Surgery"
+  journal: "American Journal of Respiratory and Critical Care Medicine"
+  year: 2022
+  month: 5
+  volume: 205
+  issue: "Supplement_1"
+  start: "A4996"
+  doi: "10.1164/ajrccm-conference.2022.205.1_MeetingAbstracts.A4996"
+  url: "https://doi.org/10.1164/ajrccm-conference.2022.205.1_MeetingAbstracts.A4996"

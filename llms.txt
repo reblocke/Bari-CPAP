@@ -1,0 +1,48 @@
+# Bari-CPAP
+
+Legacy Python analysis for a University of Utah bariatric surgery cohort examining CPAP use, serum bicarbonate trajectories, and suspected obesity hypoventilation syndrome.
+
+## Scholarly Record
+- Primary citable record: "Changes in Bicarbonate in Patients at Risk for Obesity Hypoventilation Undergoing Bariatric Surgery."
+- Abstract venue: American Thoracic Society 2022 International Conference; American Journal of Respiratory and Critical Care Medicine 2022;205(Supplement_1):A4996.
+- DOI: https://doi.org/10.1164/ajrccm-conference.2022.205.1_MeetingAbstracts.A4996
+- Public talk page: https://reblocke.github.io/talks/2022-HCO3-BARIATRIC
+- Repository: https://github.com/reblocke/Bari-CPAP
+
+## Repository Purpose
+- Preserves legacy Python code used for the bariatric surgery / suspected OHS bicarbonate analysis.
+- Restores the historical HCO3 workbook loader and patient-record model expected by `DataAnalysis.py`.
+- Makes the workflow runnable on local compatible workbooks without exposing restricted clinical data.
+
+## Run Path
+```bash
+python -m pip install -r requirements.txt -r requirements-dev.txt
+python DataAnalysis.py --input-dir data/private --output-dir outputs/legacy-python
+```
+
+Expected local-only inputs:
+- `data/private/BARI_SLEEP_CPAP_COMPLIANCE_092619.xlsx`
+- `data/private/Bari HCO3 10-30-21-working.xlsx`
+
+Generated outputs:
+- `outputs/legacy-python/DescriptiveStats.txt`
+- `outputs/legacy-python/*.xlsx`
+- `outputs/legacy-python/*.png`
+- `outputs/legacy-python/dist figs/*.png`
+
+## Data Restrictions
+- The source workbooks are restricted patient-level clinical data and must not be committed.
+- Generated row-level outputs such as `full_output.xlsx` and `output.xlsx` are local-only.
+- Historical aggregate outputs are archived at https://github.com/reblocke/Bari-CPAP/releases/tag/legacy-ats2022-aggregate-outputs-2026-06-04.
+
+## Machine-Readable Files
+- `README.md` gives human-facing context and run instructions.
+- `CITATION.cff` contains structured software and abstract citation metadata.
+- `data_dictionary.md` and `data_dictionary.csv` document expected workbook variables, derived fields, and outputs.
+- `AGENTS.md` gives repository-specific instructions for future coding agents.
+
+## Agent Cautions
+- Do not restore `.idea/`, generated root output files, or `dist figs/` to the default branch.
+- Do not copy publisher abstract text or private manuscript drafts into Markdown.
+- Preserve legacy analysis logic unless a separate scientific refactor is requested.
+- Keep output paths under ignored output folders.
