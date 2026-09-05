@@ -34,6 +34,8 @@ sheet name is `Sheet 1` for both required inputs.
 - Mark inferred dictionary definitions as `needs_review` rather than guessing.
 
 ## Verification Before Publishing
+For documentation-only edits, check affected references and `git diff --check`. For analysis-code or input-contract changes, run the tests and synthetic smoke below; they do not establish restricted-data reproduction. Use a fresh smoke output directory if the example destination already contains work.
+
 ```bash
 python -m pytest
 python DataAnalysis.py --input-dir tests/fixtures --output-dir /tmp/bari-cpap-smoke
